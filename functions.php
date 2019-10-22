@@ -25,7 +25,7 @@ function imagecopymerge_alpha($dst_im, $src_im, $dst_x, $dst_y, $src_x, $src_y, 
 }
 
 function clean($string) {
-    return preg_replace('/[^\da-z \/\: . ? ,]/i', '', $string); // Removes special chars.
+    return preg_replace('/[^\da-z \/\: .?&,]/i', '', $string); // Removes special chars.
 }
 
 function throw_error($msg = '') {

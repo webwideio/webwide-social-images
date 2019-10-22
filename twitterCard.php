@@ -81,7 +81,12 @@ foreach ($title_options['lines'] as $line){
 $i += $padding;
 
 // Create round image from profile picture
-$src = imagecreatefromjpeg($avatar);
+if(exif_imagetype($avatar) == IMAGETYPE_PNG) {
+	$src = imagecreatefrompng($avatar);	
+} else {
+	$src = imagecreatefromjpeg($avatar);	
+}
+
 $src = imagescale($src, 100, 100);
 $src_width = imagesx($src);
 $src_height = imagesy($src);
