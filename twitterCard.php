@@ -3,31 +3,38 @@ require('functions.php');
 $config = include('config.php');
 
 // Get thread ID
-$id = htmlspecialchars(intval($_GET['id'])); // Just being paranoid?
+$id = intval($_GET['id']);
+
+if ($id === 0) {
+    throw_error('Invalid thread id.');
+}
 
 // Do we already have that in the cache? If so, just show us that!
-if(file_exists('cache/thread-' . $id . '.png')) {
-	header("Content-type: image/png");
-	readfile('cache/thread-' . $id . '.png');
-	exit;
+if (file_exists('cache/thread-' . $id . '.png')) {
+    header('Content-type: image/png');
+    readfile('cache/thread-' . $id . '.png');
+    exit;
 }
 
 // Create a stream
-$opts = array(
-  'http'=>array(
-	'method'=>"GET",
-	'header'=>"XF-Api-Key: " . $config['api_key'] . "\r\n",
-	'ssl' => array('verify_peer'=>false, 'verify_peer_name'=>false)
-  )
-);
+$opts = [
+    'http' => [
+        'method' => 'GET',
+        'header' => 'XF-Api-Key: ' . $config['api_key'] . PHP_EOL,
+        'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false
+    ],
+  ]
+];
 
 // Connect to API & get thread JSON
 $context = stream_context_create($opts);
 $file = file_get_contents('https://webwide.io/api/threads/' . $id . '/', false, $context);
 
 // Check thread exists
-if($file == null) {
-	die('No such thread');	
+if ($file === false) {
+    throw_error('Thread not found.');
 }
 
 $threadData = json_decode($file);
@@ -40,8 +47,8 @@ $subtitle = truncate(clean($username . ' posted a thread in ' . $forum . '...'),
 $avatar = $threadData->thread->User->{'avatar_urls'}->o;
 
 // If user has no avatar, show a default one instead
-if($avatar == '') {
-	$avatar = 'assets/default-avatar.jpg';
+if (empty($avatar) || strlen($avatar) <= 8) { // Check if string is empty or smaller than strlen('https://')
+    $avatar = 'assets/default-avatar.jpg';
 }
 
 // Card settings
@@ -66,9 +73,9 @@ $title_options = text_to_lines($title, $card_width);
 
 // Add title line by line
 $i = $padding + 75;
-foreach($title_options['lines'] as $line){
-	imagettftext($image, $font, $angle, $padding, $i, $dark, 'assets/OpenSans-ExtraBold.ttf', trim($line));
-	$i += $line_height;
+foreach ($title_options['lines'] as $line){
+    imagettftext($image, $font, $angle, $padding, $i, $dark, 'assets/OpenSans-ExtraBold.ttf', trim($line));
+    $i += $line_height;
 }
 
 $i += $padding;
@@ -96,7 +103,7 @@ imagecopymerge_alpha($image, $src, $dstX, $dstY, $srcX, $srcY, $src_width, $src_
 imagepng($image, 'cache/thread-' . $id . '.png');
 
 // Print image to browser
-header("Content-type: image/png");
+header('Content-type: image/png');
 imagepng($image);
 imagedestroy($image);
 
